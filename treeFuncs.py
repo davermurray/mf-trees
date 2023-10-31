@@ -4,7 +4,8 @@
 # In[ ]:
 import numpy as np
 import pandas as pd
-
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from spotpy.objectivefunctions import rmse
 from spotpy.objectivefunctions import kge
 from spotpy.objectivefunctions import correlationcoefficient as r
@@ -50,7 +51,58 @@ def trainAndEvaluateModel(MLmodel, samples, targets, pars, test_size, n, rn):
     
     return imp_df, metrics_df, y_test, y_pred
 
+def plotImportance(imp_df,well_heads,well_loc_df, numTS, n,rn, title):
+    
+    dt_total_imp_df = imp_df.sum(axis=1) / n #sum up all the trees and normalize to 1 
+    #Sum up all the stress periods for each well location
+    dt_AllTSimp = dt_total_imp_df.groupby(dt_total_imp_df.index // numTS).sum()
+    
+    #get indicies of every feature per TS (stressperiod)
+    TSIndices = np.arange(0,int(well_heads.columns[-1])+1,numTS)
+    
+    for i in range(numTS):
+        featInTS = np.intersect1d(dt_total_imp_df.index, TSIndices+i)
+        print(featInTS)
+        print("Number of Features used in Stress period " + str(i) + ": " + str(len(featInTS)))
+        print("Sum of Importances in Stress period " + str(i) + ": " + str(dt_total_imp_df.loc[featInTS].sum()))
+        
+    #feature importance Mapping
+    wellmesh_dt = np.ndarray((50,50))
+    wellmesh_dt[:,:] = -1e30
 
+    
+    for k in dt_AllTSimp.index:
+            wellmesh_dt[int(well_loc_df.loc[k, 1]), int(well_loc_df.loc[k, 0])] = dt_AllTSimp.loc[k]
+    
+    #set up the meshgrid   
+    kk = np.arange(0,50)
+    gg = np.arange(0,50)
+    GG, KK = np.meshgrid(gg,kk)
+    
+    cmap2 = cm.get_cmap("jet_r")#,lut=20)
+    cmap2.set_under("lightgrey")
+    
+    vmax = np.max(dt_AllTSimp)
+    #vmax = 0.1
+    vmin = np.min(dt_AllTSimp)
+    
+    plt.figure(figsize=(8,6))
+    plt.pcolormesh(KK,GG,wellmesh_dt,vmax = vmax, vmin = vmin, cmap = cmap2, shading='nearest')
+    plt.plot(32, 19, marker="o", markersize=8, color="White", linestyle = "None", label="Pumping Well")
+    plt.plot(rn, 25, marker="*", markersize=12, color="Green", linestyle = "None",label="Prediction Reach")
+    # grid_z0 = griddata(wellmap[:1], wellmap[2], (KK, GG), method='nearest')
+    #plt.show()
+    #plt.imshow(wellmesh, cmap='RdBu')
+    plt.colorbar(label = "Location Importance")
+    plt.xlabel('Columns')
+    plt.ylabel('Rows')
+    plt.title(title)
+    plt.legend(loc="lower right")
+    
+    return
+    
+    
+    
 def evalTree(clf):
     #Evaluating the tree - From Sklearn
     #https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html
