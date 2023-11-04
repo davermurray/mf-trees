@@ -2,6 +2,7 @@
 # coding: utf-8
 
 # In[ ]:
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,8 +13,8 @@ from spotpy.objectivefunctions import correlationcoefficient as r
 from spotpy.objectivefunctions import bias
 from spotpy.objectivefunctions import nashsutcliffe as nse
 from sklearn.model_selection import train_test_split
-
-
+from itertools import product
+#%% Metrics Cell
 def metrics(x,y): #x = obs, y = sim
     return [bias(x,y),rmse(x,y),r(x,y),nse(x,y),kge(x,y)]
 
@@ -22,7 +23,7 @@ def NSE(predictions,targets):
     mse = np.mean((predictions - targets) ** 2)
     nse = 1 - (mse / np.var(targets))
     return nse
-
+#%% Model Evaluation
 def trainAndEvaluateModel(MLmodel, samples, targets, pars, test_size, n, rn):
     PredList = []
     metrics_ls = []
@@ -51,6 +52,7 @@ def trainAndEvaluateModel(MLmodel, samples, targets, pars, test_size, n, rn):
     
     return imp_df, metrics_df, y_test, y_pred
 
+#%%
 def plotImportance(imp_df,well_heads,well_loc_df, numTS, n,rn, title):
     
     dt_total_imp_df = imp_df.sum(axis=1) / n #sum up all the trees and normalize to 1 
@@ -80,7 +82,7 @@ def plotImportance(imp_df,well_heads,well_loc_df, numTS, n,rn, title):
     GG, KK = np.meshgrid(gg,kk)
     
     cmap2 = cm.get_cmap("jet_r")#,lut=20)
-    cmap2.set_under("lightgrey")
+    cmap2.set_under("k")
     
     vmax = np.max(dt_AllTSimp)
     #vmax = 0.1
@@ -99,10 +101,33 @@ def plotImportance(imp_df,well_heads,well_loc_df, numTS, n,rn, title):
     plt.title(title)
     plt.legend(loc="lower right")
     
-    return
+    return wellmesh_dt
     
+def wellmesh_correlation(all_well_loc,well_head_df):
     
+    all_well_loc_df = pd.DataFrame(all_well_loc, columns = ['row','col']).reset_index()
+    all_well_loc_df.set_index(['row','col'], inplace = True)
     
+    #create a blank 50x50 mesh grid - not these are literals so only works for this model
+    wellmesh_corr = np.ndarray((50,50))
+    wellmesh_corr[:][:] = -1e30
+
+    for i in range(all_well_loc.shape[0]):
+        #find the location of the well and create the corr list
+        center = tuple(all_well_loc[i])
+        corr_matrix = []
+        
+        #calculate corr with each neighbor
+        for search in product((1,0,-1),repeat = 2): #creates non repeating combos pairs which creates a grid of neighbors
+            neighbor = tuple(np.add(search, (center)))
+            if neighbor != center and neighbor in all_well_loc_df.index:
+                corr_matrix.append(r(well_head_df[i],well_head_df[all_well_loc_df.loc[neighbor][0]]))
+                
+        #set the mesh location to equal the average correlation        
+        wellmesh_corr[int(all_well_loc[i, 1]),int(all_well_loc[i, 0])] = np.mean(corr_matrix)
+
+    return wellmesh_corr
+ #%%   
 def evalTree(clf):
     #Evaluating the tree - From Sklearn
     #https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html
