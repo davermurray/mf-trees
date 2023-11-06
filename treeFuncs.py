@@ -24,27 +24,39 @@ def NSE(predictions,targets):
     nse = 1 - (mse / np.var(targets))
     return nse
 #%% Model Evaluation
-def trainAndEvaluateModel(MLmodel, samples, targets, pars, test_size, n, rn):
-    PredList = []
+def trainAndEvaluateModel(MLmodel, samples, targets, pars, test_size, n):
+    #PredList = []
     metrics_ls = []
     print('Shape of Input Samples: ' + str(samples.shape))
+    print('Shape of Output Targets: ' + str(targets.shape))
     
-    imp_df = pd.DataFrame(index = samples.columns.astype('int'))
+    imp_df = pd.DataFrame(index = samples.columns)#.astype('int'))
 
     for i in range(n):
-        X_train, X_test, y_train, y_test = train_test_split(samples, targets[rn], test_size=test_size) #random_state=1) #changed the random state to 1 - 2/27/23
+        X_train, X_test, y_train, y_test = train_test_split(samples, targets, test_size=test_size) #random_state=1) #changed the random state to 1 - 2/27/23
         # Create Tree Model Object
-        Tree = MLmodel(**pars)
+        if pars == None:
+            Tree = MLmodel()
+        else:
+            Tree = MLmodel(**pars)
         # Train Decision Tree Classifer
         Tree = Tree.fit(X_train,y_train)
 
         #Predict the response for test dataset
         y_pred = Tree.predict(X_test)
-        PredList.append(y_pred)
-        metrics_ls.append(metrics(y_test, y_pred))   
+       # PredList.append(y_pred)
+        
+        #passing multi-level dataframes into the targets(y) returns a dataframe, so need to check for it
+        if isinstance(y_test, pd.DataFrame):
+            y_test = y_test['Qout'].values.flatten()
+            y_pred = y_pred.flatten()
+            metrics_ls.append(metrics(y_test, y_pred))
+        else:
+            metrics_ls.append(metrics(y_test, y_pred))   
+
         
         #feature importance
-        feat_df = pd.DataFrame(Tree.feature_importances_, index = Tree.feature_names_in_.astype('int')) 
+        feat_df = pd.DataFrame(Tree.feature_importances_, index = Tree.feature_names_in_)#.astype('int')) 
         imp_df = imp_df.merge(feat_df.rename(columns={0:i}), left_index=True, right_index = True)
         
     metric_cols = ['bias','rmse','r','nse','kge']
