@@ -1,6 +1,6 @@
 # mf-trees
 
-Repository for work using feature importance in Tree-based ML algorithms on finding potential monitoring locations in a groundwater basin. The code is based on an idealized basin. 
+Repository for working with Tree-based ML algorithms on finding potential monitoring locations in a groundwater basin using the inherent tree feature importance.
 
 We use the USGS MODFLOW-2005 model to generate synthetic hydraulic head a nd streamflow values for testing. We use <i>flopy</i> to generate inputs and run the MODFLOW model. The code for this is in the mf_notebooks folder. There are 3 scenarios: a simple steady state run, a transient scenario with constant pumping, and a transient scenario with seasonal pumping.
 
