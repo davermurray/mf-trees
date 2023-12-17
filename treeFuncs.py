@@ -9,16 +9,17 @@ import matplotlib.cm as cm
 from spotpy.objectivefunctions import rmse
 from spotpy.objectivefunctions import kge
 from spotpy.objectivefunctions import correlationcoefficient as r
-from spotpy.objectivefunctions import bias
+from spotpy.objectivefunctions import pbias
 from spotpy.objectivefunctions import nashsutcliffe as nse
 from spotpy.objectivefunctions import lognashsutcliffe as lognse
 
 from sklearn.model_selection import train_test_split
 from itertools import product
+
 #%% Metrics Cell
 def metrics(x,y): #x = obs, y = sim
     epsilon=np.mean(x)/100 + 0.1
-    return [bias(x,y),rmse(x,y),r(x,y),nse(x,y),lognse(x,y,epsilon=epsilon),kge(x,y)]
+    return [pbias(x,y),rmse(x,y),r(x,y),nse(x,y),lognse(x,y,epsilon=epsilon),kge(x,y)]
 
 def NSE(predictions,targets):
     mse = np.mean((predictions - targets) ** 2)
@@ -123,8 +124,12 @@ def plotImportance(imp_df,well_heads,well_loc_df, numTS, n,rn, title):
     #vmax = 0.1
     vmin = np.min(dt_AllTSimp)
     
+    river = np.ndarray((48,))
+    river[:] = 25
+    
     plt.figure(figsize=(8,6))
     plt.pcolormesh(KK,GG,wellmesh_dt,vmax = vmax, vmin = vmin, cmap = cmap2, shading='nearest')
+    plt.plot(range(1,49),river, color="lightblue", linestyle = 'dashed', alpha = 1, label='River')
     plt.plot(32, 19, marker="o", markersize=12, color="White", linestyle = "None", label="Pumping Well")
     plt.plot(rn, 25, marker="*", markersize=16, color="Green", linestyle = "None",label="Prediction Reach")
     # grid_z0 = griddata(wellmap[:1], wellmap[2], (KK, GG), method='nearest')
