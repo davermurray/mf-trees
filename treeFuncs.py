@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from matplotlib.colors import LinearSegmentedColormap
+
 from spotpy.objectivefunctions import rmse
 from spotpy.objectivefunctions import kge
 from spotpy.objectivefunctions import correlationcoefficient as r
@@ -117,8 +119,11 @@ def plotImportance(imp_df,well_heads,well_loc_df, numTS, n,rn, title):
     gg = np.arange(0,50)
     GG, KK = np.meshgrid(gg,kk)
     
-    cmap2 = cm.get_cmap("jet_r")#,lut=20)
-    cmap2.set_under("k")
+#     cmap2 = cm.get_cmap("jet_r")#,lut=20)
+#     cmap2.set_under("k")
+    cmap2 = cm.get_cmap("Blues")#,lut=20)
+    cmap2 = LinearSegmentedColormap.from_list('', ['white', 'darkblue'])
+    cmap2.set_under("lightgrey")
     
     vmax = np.max(dt_AllTSimp)
     #vmax = 0.1
@@ -128,10 +133,10 @@ def plotImportance(imp_df,well_heads,well_loc_df, numTS, n,rn, title):
     river[:] = 25
     
     plt.figure(figsize=(8,6))
-    plt.pcolormesh(KK,GG,wellmesh_dt,vmax = vmax, vmin = vmin, cmap = cmap2, shading='nearest')
-    plt.plot(range(1,49),river, color="lightblue", linestyle = 'dashed', alpha = 1, label='River')
-    plt.plot(32, 19, marker="o", markersize=12, color="White", linestyle = "None", label="Pumping Well")
-    plt.plot(rn, 25, marker="*", markersize=16, color="Green", linestyle = "None",label="Prediction Reach")
+    plt.pcolormesh(KK,GG,wellmesh_dt,vmax = vmax, vmin = vmin, cmap = cmap2, shading='nearest',ec='lightgrey',lw=0.5)
+    plt.plot(range(1,49),river, color="lightskyblue", linestyle = 'solid', alpha = 1, label='River',lw= 1.5)
+    plt.plot(32, 19, marker="o", markersize=10, markeredgecolor='k', fillstyle='none', c="None", label="Pumping Well")
+    plt.plot(rn, 25, marker="s", markersize=10,  markeredgecolor="Green",fillstyle = "none", c="None", label="Prediction Reach")
     # grid_z0 = griddata(wellmap[:1], wellmap[2], (KK, GG), method='nearest')
     #plt.show()
     #plt.imshow(wellmesh, cmap='RdBu')
